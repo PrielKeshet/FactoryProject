@@ -1,0 +1,105 @@
+<html>
+    <script src="Script_Src.js"></script>
+
+<script>
+    
+    function Basic() {
+        HelloName();
+        GetData();
+        OneLessAction();
+    }
+    
+
+    async function GetData() {
+//get data
+        let resp = await fetch('https://localhost:44336/api/Department');
+        let Data = await resp.json();
+        let tBody = document.getElementById('tBody');
+        tBody.innerText = "";
+        let x = await fetch('https://localhost:44336/api/Employee');
+        let Employee = await x.json();
+        Data.forEach(async row => {
+            let name = document.createElement('td');
+            name.innerText = row.Name;
+            let Manager = document.createElement('td');
+            if (row.Manager != 0) {
+                let emp = Employee.find(x => x.ID == row.Manager);
+                Manager.innerText = emp.FName + " " + emp.LName;
+            }
+            else {
+                Manager.innerText = "no manager";
+            }
+            //edit link
+            let EditLink = document.createElement('a');
+            EditLink.href = 'EditDepartment.html';
+            EditLink.innerText = 'Edit';
+            EditLink.onclick = () => {
+                sessionStorage['DepartmentID'] = row.ID;
+            };
+            let tdEdit = document.createElement('td');
+            tdEdit.appendChild(EditLink);
+            //delete link, only if deparment empty from employees
+            let DeleteLink = document.createElement('a');
+            DeleteLink.style.visibility = 'visible';
+            DeleteLink.innerText = '\n' + 'Delete';
+            DeleteLink.href = '#';
+            DeleteLink.addEventListener('click', () => DeleteDepartment(row.ID));
+
+
+            Employee.forEach(emp => {
+                if (row.ID == emp.DepartmentID) {
+                    DeleteLink.style.visibility = 'hidden';
+                }
+            });
+
+            tdEdit.appendChild(DeleteLink);
+
+
+            let tr = document.createElement('tr');
+            tr.appendChild(name);
+            tr.appendChild(Manager);
+            tr.appendChild(tdEdit);
+            tBody.append(tr);
+
+        });
+    }
+    async function DeleteDepartment(id) {
+        let request = {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        }
+        let resp = await fetch('https://localhost:44336/api/Department/' + id, request);
+        let Data = await resp.json();
+         OneLessAction();
+        GetData();
+    }
+    function AddDepartment() {
+        location.href = 'AddDepartment.html';
+    }
+  
+
+</script>
+
+<body onload="Basic()">
+    <span id="SpanName"></span>
+    <a href="#" onclick="LogOut()" style="padding-left: 5px;">התנתק</a>
+
+    <br><br>
+    <h1>Departments:</h1>
+    <button onclick="GoHome()">Return to home page</button>
+    <br><br>
+    <button onclick="AddDepartment()">Add Department</button>
+    <br> <br>
+    <table border="1">
+        <thead>
+            <th>Name</th>
+            <th>Manager</th>
+            <th>Edit/Delete</th>
+        </thead>
+        <tbody id="tBody">
+
+        </tbody>
+    </table>
+</body>
+
+</html>

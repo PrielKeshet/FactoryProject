@@ -1,0 +1,125 @@
+<html>
+<script src="Script_Src.js"></script>
+
+<script>
+    function Basic() {
+        HelloName();
+        GetData();
+
+    }
+
+    async function GetData() {
+        let id = sessionStorage['DepartmentID'];
+        let resp = await fetch('https://localhost:44336/api/Department/' + id);
+        let Data = await resp.json();
+        document.getElementById('NameTxt').value = Data.Name;
+        //options for managers, only if they are not alredy managers
+        let resp2 = await fetch('https://localhost:44336/api/Employee');
+        let Employees = await resp2.json();
+        let select = document.getElementById('ManName');
+        let resp3 = await fetch('https://localhost:44336/api/Department');
+        let Departments = await resp3.json();
+
+        Employees.forEach(async emp => {
+            let bool = false;
+
+            Departments.forEach(dep => {
+                if (dep.Manager == emp.ID) {
+                    bool = true;
+                    //add option of current manager
+                    if (dep.Manager == Data.Manager) {
+                        let opt = document.createElement('option');
+                        opt.value = emp.ID;
+                        opt.innerText = emp.FName + " " + emp.LName;
+                        select.appendChild(opt);
+                    }
+                }
+            })
+            if (bool == false) {
+                let opt = document.createElement('option');
+                opt.value = emp.ID;
+                opt.innerText = emp.FName + " " + emp.LName;
+                select.appendChild(opt);
+            }
+        });
+        select.value = Data.Manager;
+    }
+
+    async function SaveData() {
+        if(document.getElementById('NameTxt').value==""){
+            alert('input invalid');
+        }
+        else{
+        //update department
+        let id = sessionStorage['DepartmentID'];
+        let obj = {
+            Name: document.getElementById('NameTxt').value,
+            Manager: document.getElementById('ManName').value
+        }
+        let request = {
+            method: 'PUT',
+            body: JSON.stringify(obj),
+            headers: { 'Content-Type': 'application/json' }
+        }
+        let resp = await fetch('https://localhost:44336/api/Department/' + id, request);
+        let Data = await resp.json();
+        console.log(Data);
+
+
+        // update choosen manager deparment number
+        let respEmp = await fetch('https://localhost:44336/api/Employee/' + document.getElementById('ManName').value);
+        let DataEmp = await respEmp.json();
+
+        let EmpObj = {
+            FName: DataEmp.FName,
+            LName: DataEmp.LName,
+            StartWorkYear: DataEmp.StartWorkYear,
+            DepartmentID: id
+        }
+
+        let EmpRequest = {
+            method: 'PUT',
+            body: JSON.stringify(EmpObj),
+            headers: { 'Content-Type': 'application/json' }
+        }
+        let e = await fetch('https://localhost:44336/api/Employee/' + document.getElementById('ManName').value, EmpRequest);
+        let emp = await e.json();
+        console.log(DataEmp.FName + ' is now a manager!');
+
+        document.getElementById('EditSpan').innerText = 'Edit was saved';
+       sessionStorage.removeItem('DepartmentID');
+        OneLessAction();
+        
+    }
+}
+    function Home()
+    {
+        sessionStorage.removeItem('DepartmentID');
+        GoHome();
+    }
+
+
+</script>
+
+<body onload="Basic()">
+    <span id="SpanName"></span>
+    <a href="#" onclick="LogOut()" style="padding-left: 5px;">התנתק</a>
+
+    <br><br>
+    <h1>Edit Department</h1>
+    <button onclick="Home()">Return to home page</button>
+    <br><br>
+    <button onclick="SaveData()">save</button>
+    <br><br>
+    Name: <input type="text" id="NameTxt" maxlength="20">
+    <br>
+
+    <br>
+    Manager: <select id="ManName"></select>
+    <br><br>
+    <span id="EditSpan"></span>
+
+
+</body>
+
+</html>

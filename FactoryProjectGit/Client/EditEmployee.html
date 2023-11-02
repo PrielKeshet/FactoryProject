@@ -1,0 +1,110 @@
+<html>
+<script src="Script_Src.js"></script>
+
+<script>
+    function Basic() {
+        HelloName();
+        GetData();
+    }
+
+
+
+    async function GetData() {
+        let id = sessionStorage['EmployeeID'];
+        let resp = await fetch('https://localhost:44336/api/Employee/' + id);
+        let Data = await resp.json();
+        document.getElementById('FNameTxt').value = Data.FName;
+        document.getElementById('LNameTxt').value = Data.LName;
+        document.getElementById('StartWorkYearTxt').value = Data.StartWorkYear;
+        //deparments select list
+        let select = document.getElementById('DepartmentName');
+        let resp2 = await fetch('https://localhost:44336/api/Department');
+        let Departments = await resp2.json();
+        Departments.forEach(dep => {
+            let opt = document.createElement('option');
+            opt.innerText = dep.Name;
+            opt.value = dep.ID;
+            select.appendChild(opt);
+        });
+        select.value = Data.DepartmentID;
+    }
+
+    async function SaveData() {
+        if(document.getElementById('FNameTxt').value==""||
+        document.getElementById('LNameTxt').value==""||
+        document.getElementById('StartWorkYearTxt').value==""){
+            alert('input invalid');
+        }
+        else{
+        let id = sessionStorage['EmployeeID'];
+        let resp = await fetch('https://localhost:44336/api/Employee/' + id);
+        let Data = await resp.json();
+        //if employee was dep manager, and was moved to new dep, change first dep manager to 0
+        let DepResp = await fetch('https://localhost:44336/api/Department/' + Data.DepartmentID);
+        let DepData = await DepResp.json();
+        if (DepData.Manager == id) {
+            let DepObj = {
+                Name: DepData.Name,
+                Manager: 0
+            }
+            let DepRequest = {
+                method: 'PUT',
+                body: JSON.stringify(DepObj),
+                headers: { 'Content-Type': 'application/json' }
+            }
+            let d = await fetch('https://localhost:44336/api/Department/' + Data.DepartmentID, DepRequest);
+            let Answer = await d.json();
+            console.log('No longer department manager');
+
+        }
+        //update employee
+        let obj = {
+            FName: document.getElementById('FNameTxt').value,
+            LName: document.getElementById('LNameTxt').value,
+            StartWorkYear: document.getElementById('StartWorkYearTxt').value,
+            DepartmentID: document.getElementById('DepartmentName').value
+        }
+        let request = {
+            method: 'PUT',
+            body: JSON.stringify(obj),
+            headers: { 'Content-Type': 'application/json' }
+        }
+        let resp2 = await fetch('https://localhost:44336/api/Employee/' + id, request);
+        let Data2 = await resp2.json();
+
+        console.log(Data2);
+        document.getElementById('EditSpan').innerText = 'Edit was saved';
+        OneLessAction();
+        sessionStorage.removeItem('EmployeeID');
+    }
+}
+    function Home() {
+        sessionStorage.removeItem('EmployeeID');
+        GoHome();
+    }
+
+</script>
+
+<body onload="Basic()">
+    <span id="SpanName"></span>
+    <a href="#" onclick="LogOut()" style="padding-left: 5px;">התנתק</a>
+
+    <br><br>
+    <button onclick="Home()">Return to home page</button>
+    <br><br>
+    First name:<input type="text" id="FNameTxt" maxlength="20" >
+    <br><br>
+    Last name:<input type="text" id="LNameTxt" maxlength="20" >
+    <br><br>
+    Beginig year: <input type="text" id="StartWorkYearTxt" >
+    <br><br>
+    Choose Department: <select id="DepartmentName">
+    </select>
+    <button onclick="SaveData()">Save</button>
+    <br><br>
+    <span id="EditSpan"></span>
+
+
+</body>
+
+</html>

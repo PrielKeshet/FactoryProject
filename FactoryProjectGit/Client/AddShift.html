@@ -1,0 +1,60 @@
+<html>
+<script src="Script_Src.js"></script>
+
+<script>
+    function Basic() {
+        HelloName();
+    }
+
+
+    async function SaveShift() {
+        if(document.getElementById('DateInput').value==""||
+        document.getElementById('StartTime').value==""||
+        document.getElementById('EndTime').value==""){
+            alert('input is invalid');
+        }
+        else{
+        let obj = {
+            Date: document.getElementById('DateInput').value,
+            StartTime: document.getElementById('StartTime').value,
+            EndTime: document.getElementById('EndTime').value
+        }
+        let request = {
+            method: 'POST',
+            body: JSON.stringify(obj),
+            headers: { 'Content-Type': 'application/json' }
+        }
+        let resp = await fetch('https://localhost:44336/api/Shift', request);
+        let Data = await resp.json();
+        console.log(Data);
+
+        document.getElementById('SavedSpan').innerText = "Shift was saved";
+         OneLessAction();
+         document.getElementById('SaveBtn').disabled=true;
+
+    }
+}
+
+</script>
+
+<body onload="Basic()">
+    <span id="SpanName"></span>
+    <a href="#" onclick="LogOut()" style="padding-left: 5px;">התנתק</a>
+
+    <br><br>
+    <button onclick="GoHome()">Return to home page</button>
+    <br><br>
+    <input type="datetime-local" id="DateInput" >
+    <br><br>
+    <input type="number" id="StartTime" placeholder="Start time" >
+    <br><br>
+    <input type="number" id="EndTime" placeholder="End time">
+    <br><br>
+    <button id="SaveBtn" onclick="SaveShift()">Save Shift</button>
+
+    <br><br>
+    <span id="SavedSpan"></span>
+
+</body>
+
+</html>

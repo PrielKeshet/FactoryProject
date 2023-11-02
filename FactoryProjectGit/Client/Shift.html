@@ -1,0 +1,103 @@
+<html>
+<script src="Script_Src.js"></script>
+
+<script>
+    function Basic() {
+        HelloName();
+        GetData();
+        OneLessAction();
+
+
+    }
+
+
+    async function GetData() {
+        let tBody = document.getElementById('tBody');
+        tBody.innerText = "";
+        let resp = await fetch('https://localhost:44336/api/Shift');
+        let Data = await resp.json();
+        let resp2 = await fetch('https://localhost:44336/api/FullEmployeeShift');
+        let full = await resp2.json();
+        Data.forEach(async shift => {
+
+            let Date = document.createElement('td');
+            Date.innerText = shift.Date;
+            let StartTime = document.createElement('td');
+            StartTime.innerText = shift.StartTime;
+            let EndTime = document.createElement('td');
+            EndTime.innerText = shift.EndTime;
+
+            //employees list for every shift
+            let tdList = document.createElement('td');
+            let list = document.createElement('ul');
+
+            let arr = [];
+            let bool = false;
+
+            full.forEach(item => {
+                arr.forEach(i => {
+                    if (i == shift.ID) {
+                        bool = true;
+                    }
+                })
+
+                if (item.ShiftID == shift.ID) {
+                    if (bool == false) {
+                        item.EmployeeList.forEach(emp => {
+                            let li = document.createElement('li');
+                            let link = document.createElement('a');
+                            link.href = '#';
+                            link.innerText = emp.FName + " " + emp.LName;
+                            link.addEventListener('click', () => {
+                                sessionStorage['EmployeeID'] = emp.ID;
+                                location.href = 'EditEmployee.html';
+                            })
+                            li.appendChild(link);
+                            list.appendChild(li);
+                            arr.push(shift.ID);
+                        })
+                    }
+                }
+
+            })
+
+            tdList.appendChild(list);
+
+            let tr = document.createElement('tr');
+            tr.appendChild(Date);
+            tr.appendChild(StartTime);
+            tr.appendChild(EndTime);
+            tr.appendChild(tdList);
+
+            tBody.appendChild(tr);
+        });
+    }
+
+    function AddShift() {
+        location.href = 'AddShift.html';
+    }
+</script>
+
+<body onload="Basic()">
+    <span id="SpanName"></span>
+    <a href="#" onclick="LogOut()" style="padding-left: 5px;">התנתק</a>
+    <br><br>
+    <button onclick="GoHome()">Return to home page</button>
+    <br><br>
+    <button onclick="AddShift()">Add Shift</button>
+    <br> <br>
+    <table border="1">
+        <thead>
+            <th>Date</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>List of employees</th>
+
+        </thead>
+        <tbody id="tBody"></tbody>
+
+    </table>
+
+</body>
+
+</html>

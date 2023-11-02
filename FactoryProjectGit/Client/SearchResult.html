@@ -1,0 +1,195 @@
+<html>
+<script src="Script_Src.js"></script>
+
+<script>
+    function Basic() {
+        HelloName();
+        GetData();
+        OneLessAction();
+
+    }
+
+    async function GetData() {
+       //get all data 
+        let SearchValue = sessionStorage['SearchValue'];
+        let tBody = document.getElementById('tBody');
+        tBody.innerText = "";
+        let resp = await fetch('https://localhost:44336/api/Employee');
+        let Employees = await resp.json();
+        let r = await fetch('https://localhost:44336/api/FullEmployeeShift');
+        let full = await r.json();
+        let d = await fetch('https://localhost:44336/api/Department');
+        let Departments = await d.json();
+        //filter data
+        Employees.forEach(async emp => {
+            let dep = Departments.find(x => x.ID == emp.DepartmentID)
+            if (emp.FName.includes(SearchValue)
+                || emp.LName.includes(SearchValue)
+                || dep.Name.includes(SearchValue)) {
+                //enter filtered data to table
+                let fname = document.createElement('td');
+                fname.innerText = emp.FName;
+                let lname = document.createElement('td');
+                lname.innerText = emp.LName;
+                let startWorkYear = document.createElement('td');
+                startWorkYear.innerText = emp.StartWorkYear;
+
+                let DepName = document.createElement('td');
+                DepName.innerText = dep.Name;
+                //shifts list for employee
+                let tdList = document.createElement('td');
+                let list = document.createElement('ul');
+
+                let arr = [];
+                let bool = false;
+
+                full.forEach(item => {
+                    arr.forEach(i => {
+                        if (i == emp.ID) {
+                            bool = true;
+                        }
+                    })
+
+                    if (item.EmployeeID == emp.ID) {
+                        if (bool == false) {
+                            item.ShiftList.forEach(shift => {
+                                let li = document.createElement('li');
+                                li.innerText = shift.Date + ", " + shift.StartTime + " - " + shift.EndTime;
+                                list.appendChild(li);
+                                arr.push(emp.ID);
+                            })
+                        }
+                    }
+                })
+
+                tdList.appendChild(list);
+                //edit
+                let tdLinks = document.createElement('td');
+                let EditLink = document.createElement('a');
+                EditLink.innerText = 'Edit';
+                EditLink.href = '#';
+                EditLink.addEventListener('click', async () => {
+                    sessionStorage['EmployeeID'] = emp.ID;
+                    location.href = 'EditEmployee.html';
+                })
+                //delete
+                DeleteLink = document.createElement('a');
+                DeleteLink.innerText = '\n' + 'Delete';
+                DeleteLink.href = '#';
+                DeleteLink.addEventListener('click', async () => {
+
+                    //delete employee connection to shifts
+                    full.forEach(async item => {
+                        if (item.EmployeeID == emp.ID) {
+                            let request1 = {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' }
+                            }
+
+                            let s = await fetch('https://localhost:44336/api/EmployeeShift/' + item.ID, request1);
+                            let DeletedShifts = await s.json();
+                            console.log(DeletedShifts);
+                        }
+                    })
+
+                    //delete the employee
+                    let request2 = {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' }
+                    }
+                    let d = await fetch('https://localhost:44336/api/Employee/' + emp.ID, request2);
+                    let data = await d.json();
+                    console.log(data);
+
+                    // if the deleted employee is dep manager, change managerID to 0
+                    let bool = false;
+                    let departmentID = 0;
+                    Departments.forEach(x => {
+                        if (emp.ID == x.Manager) {
+                            bool = true;
+                            departmentID = x.ID;
+                        }
+                    })
+                    if (bool == true) {
+
+                        let obj = {
+                            Name: Departments.find(x => x.ID == departmentID).Name,
+                            Manager: 0
+                        }
+                        let request = {
+                            method: 'PUT',
+                            body: JSON.stringify(obj),
+                            headers: { 'Content-Type': 'application/json' }
+                        }
+                        let resp = await fetch('https://localhost:44336/api/Department/' + departmentID, request);
+                        let Data = await resp.json();
+                    }
+                    OneLessAction();
+                    GetData();
+
+                })
+                //add shift to employee
+                let AddLink = document.createElement('a');
+                AddLink.innerText = '\n' + 'Add Shift';
+                AddLink.href = '#';
+                AddLink.addEventListener('click', () => {
+                    sessionStorage['EmployeeID'] = emp.ID;
+                    location.href = 'AddShiftToEmployee.html';
+                });
+
+                tdLinks.appendChild(EditLink);
+                tdLinks.appendChild(DeleteLink);
+                tdLinks.appendChild(AddLink);
+
+                let tr = document.createElement('tr');
+                tr.appendChild(fname);
+                tr.appendChild(lname);
+                tr.appendChild(startWorkYear);
+                tr.appendChild(DepName);
+                tr.appendChild(tdList);
+                tr.appendChild(tdLinks);
+                tBody.appendChild(tr);
+            }
+        });
+    }
+
+    function ReturnToTable() {
+        sessionStorage.removeItem('SearchValue');
+        location.href = 'Employee.html';
+    }
+
+    function Home()
+    {
+        sessionStorage.removeItem('SearchValue');
+        GoHome();
+    }
+
+</script>
+
+<body>
+
+    <body onload="Basic()">
+        <span id="SpanName"></span>
+        <a href="#" onclick="LogOut()" style="padding-left: 5px;">התנתק</a>
+
+        <br><br>
+        <button onclick="ReturnToTable()">Return to all employees table</button>
+        <br><br>
+
+        <button onclick="Home()">Return to home page</button>
+        <br><br>
+        <table border="1">
+            <thead>
+                <th>First name</th>
+                <th>Last name</th>
+                <th>Started to work at</th>
+                <th>Department</th>
+                <th>List of shifts</th>
+                <th>Links</th>
+            </thead>
+            <tbody id="tBody"></tbody>
+
+        </table>
+    </body>
+
+</html>

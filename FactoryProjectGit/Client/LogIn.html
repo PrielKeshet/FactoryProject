@@ -1,0 +1,52 @@
+<html>
+<script src="Script_Src.js"></script>
+
+<script>
+    if (!localStorage.getItem('LastDate')) {
+
+        let d = new Date();
+        let day = d.getDate();
+        let month = d.getMonth() + 1;
+        let year = d.getFullYear();
+        var LastDate = day + '/' + month + '/' + year; 
+        localStorage.setItem("LastDate", LastDate);
+    }
+
+    MakeNewDate();
+
+    async function LogIn() {
+        let id = document.getElementById('IDTxt').value;
+        let resp = await fetch('https://localhost:44336/api/User');
+        let Users = await resp.json();
+        let password1 = +document.getElementById('PasswordTxt').value;
+        let bool = false;
+        Users.forEach(user => {
+            if (user.ID == id) {
+                if (password1 == user.Password) {
+                    bool = true;
+                    sessionStorage['UserFullName'] = user.FullName;
+                    sessionStorage['UserID'] = user.ID;
+                }
+            }
+        });
+        if (bool == true) {
+
+            location.href = 'HomePage.html';
+        }
+        else {
+            alert('user id or password are incorrect');
+
+        }
+    }
+
+</script>
+
+<body>
+    <input type="text" id="IDTxt" placeholder="enter ID">
+    <br> <br>
+    <input type="password" id="PasswordTxt" placeholder="Enter Password">
+    <br> <br>
+    <button onclick="LogIn()">Log In</button>
+</body>
+
+</html>

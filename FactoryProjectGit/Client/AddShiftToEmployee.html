@@ -1,0 +1,78 @@
+<html>
+    <script src="Script_Src.js"></script>
+
+<script>
+    function Basic() {
+        HelloName();
+        GetData();
+
+    }
+    
+    async function GetData() {
+        let id = sessionStorage['EmployeeID'];
+        let resp = await fetch('https://localhost:44336/api/FullEmployeeShift');
+        let Full = await resp.json();
+        let item = Full.find(x => x.EmployeeID == id);
+        let ShiftResp = await fetch('https://localhost:44336/api/Shift');
+        let Shifts = await ShiftResp.json();
+        let select = document.getElementById('ShiftSelect');
+        //add to select only shifts that the employee is not alredy in
+        Shifts.forEach(shift => {
+            let bool = false;
+            if(item)
+            {
+                item.ShiftList.forEach(s => {
+                if (s.ID == shift.ID) {
+                    bool = true;
+                }
+            })
+            }
+            
+            if (bool == false) {
+                let opt = document.createElement('option');
+                opt.value = shift.ID;
+                opt.innerText = shift.Date + ", " + shift.StartTime + " - " + shift.EndTime;
+                select.appendChild(opt);
+            }
+        });
+
+    }
+
+    async function AddToShift() {
+        let shiftID = document.getElementById('ShiftSelect').value;
+        let EmpID = sessionStorage['EmployeeID'];
+        let obj = {
+            EmployeeID: EmpID,
+            ShiftID: shiftID
+        }
+        let request = {
+            method: 'POST',
+            body: JSON.stringify(obj),
+            headers: { 'Content-Type': 'application/json' }
+        }
+        let resp2 = await fetch('https://localhost:44336/api/EmployeeShift', request);
+        let Data = await resp2.json();
+        console.log(Data);
+        document.getElementById('SpanAdd').innerText='Added';
+         OneLessAction();
+         document.getElementById('SaveBtn').disabled=true;
+
+    }
+
+</script>
+
+<body onload="Basic()">
+    <span id="SpanName"></span>
+    <a href="#" onclick="LogOut()" style="padding-left: 5px;">התנתק</a>
+
+    <br><br>
+    <button onclick="GoHome()">Go back to Home page</button>
+    <br><br>
+    <button id="SaveBtn"  onclick="AddToShift()">Add to shift</button>
+    <br><br>
+    <select id="ShiftSelect">
+    </select>
+    <span id="SpanAdd"></span>
+</body>
+
+</html>

@@ -1,0 +1,104 @@
+<html>
+    <script src="Script_Src.js"></script>
+<script>
+    function Basic() {
+        HelloName();
+        GetData();
+    }
+
+    async function GetData() {
+        //select only of employee that are not alredy managers
+        let resp = await fetch('https://localhost:44336/api/Employee');
+        let Employee = await resp.json();
+        let resp2 = await fetch('https://localhost:44336/api/Department');
+        let Departments = await resp2.json();
+        let SelectName = document.getElementById('ManagerName');
+        Employee.forEach(async emp => {
+
+            let bool = false;
+
+            Departments.forEach(dep => {
+                if (dep.Manager == emp.ID) {
+                    bool = true;
+                }
+            })
+            if (bool == false) {
+                let opt = document.createElement('option');
+                opt.value = emp.ID;
+                opt.innerText = emp.FName + " " + emp.LName;
+                SelectName.appendChild(opt);
+            }
+        });
+    }
+
+    async function SaveDepartment() {
+        if(document.getElementById('NameTxt').value==""){
+            alert('New department name is empty');
+        }
+        else{
+        //add department
+        let obj = {
+            Name: document.getElementById('NameTxt').value,
+            Manager: document.getElementById('ManagerName').value
+        }
+        let request = {
+            method: 'POST',
+            body: JSON.stringify(obj),
+            headers: { 'Content-Type': 'application/json' }
+        }
+        let resp = await fetch('https://localhost:44336/api/Department', request);
+        let Data = await resp.json();
+        console.log(Data);
+        //change new manager department number to new department
+        let resp2 = await fetch('https://localhost:44336/api/Department');
+        let Data2 = await resp2.json();
+
+        let depID = Data2.reduce((x, y) => x.ID > y.ID ? x : y);
+        let respEmp = await fetch('https://localhost:44336/api/Employee/' + document.getElementById('ManagerName').value);
+        let DataEmp = await respEmp.json();
+
+        let EmpObj = {
+            FName: DataEmp.FName,
+            LName: DataEmp.LName,
+            StartWorkYear: DataEmp.StartWorkYear,
+            DepartmentID: depID.ID
+        }
+
+        let EmpRequest = {
+            method: 'PUT',
+            body: JSON.stringify(EmpObj),
+            headers: { 'Content-Type': 'application/json' }
+        }
+        let e = await fetch('https://localhost:44336/api/Employee/' + document.getElementById('ManagerName').value, EmpRequest);
+        let emp = await e.json();
+        console.log(DataEmp.FName + ' is now a manager!');
+        
+        document.getElementById('AddedSpan').innerText = "Department was added";
+         OneLessAction();
+         document.getElementById('SaveBtn').disabled=true;
+    }
+    }
+
+
+</script>
+
+<body onload="Basic()">
+    <span id="SpanName"></span>
+    <a href="#" onclick="LogOut()" style="padding-left: 5px;">התנתק</a>
+
+    <br><br>
+    <h1>Add Department:</h1>
+    <br>
+    <button id="SaveBtn" onclick="SaveDepartment()">Save Department</button>
+    <br> <br>
+    <button onclick="GoHome()">Go back to Home page</button>
+    <br><br>
+    Department Name: <input type="text" id="NameTxt" maxlength="20" >
+    <br><br>
+    Choose Manager: <select id="ManagerName">
+    </select>
+    <br><br>
+    <span id="AddedSpan"></span>
+</body>
+
+</html>
